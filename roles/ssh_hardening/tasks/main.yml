@@ -6,6 +6,18 @@
     update_cache: true
     cache_valid_time: 3600
 
+- name: Ensure the sshd privilege separation directory exists
+  # sshd -t refuses to parse any config without /run/sshd and exits 255 with
+  # "Missing privilege separation directory". systemd creates it from the unit's
+  # RuntimeDirectory, so it is missing until sshd has run once. Every validate
+  # step below depends on it.
+  ansible.builtin.file:
+    path: /run/sshd
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
 - name: Run the lockout pre-check before password authentication is disabled
   ansible.builtin.include_tasks: precheck.yml
   when:
