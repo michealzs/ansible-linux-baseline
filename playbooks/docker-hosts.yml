@@ -1,0 +1,10 @@
+---
+- name: Install Docker CE on docker hosts
+  hosts: docker_hosts
+  become: true
+  serial: "{{ baseline_serial | default('25%') }}"
+  max_fail_percentage: 0
+  roles:
+    - role: docker
+      tags:
+        - docker

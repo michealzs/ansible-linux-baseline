@@ -1,0 +1,12 @@
+---
+# Order matters. The validation runs first; if the merged configuration is
+# broken the play fails here and sshd keeps running with the old config.
+- name: Validate sshd configuration
+  ansible.builtin.command:
+    cmd: /usr/sbin/sshd -t
+  changed_when: false
+
+- name: Restart sshd
+  ansible.builtin.systemd_service:
+    name: ssh
+    state: restarted

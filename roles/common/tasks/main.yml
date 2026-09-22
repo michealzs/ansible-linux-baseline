@@ -1,0 +1,102 @@
+---
+- name: Refuse to run on an unsupported distribution
+  ansible.builtin.assert:
+    that:
+      - ansible_os_family == "Debian"
+      - common_platform_id in common_supported_distributions
+    fail_msg: >-
+      {{ common_platform_id }} is not in common_supported_distributions
+      ({{ common_supported_distributions | join(', ') }}).
+    quiet: true
+  vars:
+    common_platform_id: >-
+      {{ ansible_distribution ~ ' ' ~ (ansible_distribution_major_version
+         if ansible_distribution == 'Debian' else ansible_distribution_version) }}
+
+- name: Update the apt cache and install base packages
+  ansible.builtin.apt:
+    name: "{{ common_packages }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Ensure chrony is enabled and running
+  ansible.builtin.service:
+    name: chrony
+    enabled: true
+    state: started
+  when: "'chrony' in common_packages"
+
+- name: Set the hostname
+  ansible.builtin.hostname:
+    name: "{{ common_hostname }}"
+  when: common_manage_hostname | bool
+
+- name: Map the hostname to 127.0.1.1 in /etc/hosts
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: '^127\.0\.1\.1\s'
+    line: "127.0.1.1 {{ common_hostname }}"
+    insertafter: '^127\.0\.0\.1\s'
+  when: common_manage_hostname | bool
+
+- name: Set the timezone
+  community.general.timezone:
+    name: "{{ common_timezone }}"
+  when: common_manage_timezone | bool
+
+- name: Ensure the journald drop-in directory exists
+  ansible.builtin.file:
+    path: /etc/systemd/journald.conf.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Configure persistent journald storage with size limits
+  ansible.builtin.template:
+    src: journald.conf.j2
+    dest: /etc/systemd/journald.conf.d/99-baseline.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart journald
+
+- name: Apply sysctl hardening
+  ansible.posix.sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+    sysctl_file: "{{ common_sysctl_file }}"
+    sysctl_set: true
+    reload: false
+    ignoreerrors: true
+    state: present
+  loop: "{{ common_sysctl_settings | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}={{ item.value }}"
+
+- name: Manage the swap file
+  ansible.builtin.include_tasks: swap.yml
+  when: common_swap_enabled | bool
+
+- name: Deploy the message of the day
+  ansible.builtin.template:
+    src: motd.j2
+    dest: /etc/motd
+    owner: root
+    group: root
+    mode: "0644"
+  when: common_motd_enabled | bool
+
+- name: Disable Ubuntu motd-news
+  ansible.builtin.lineinfile:
+    path: /etc/default/motd-news
+    regexp: '^ENABLED='
+    line: ENABLED=0
+    create: true
+    owner: root
+    group: root
+    mode: "0644"
+  when:
+    - ansible_distribution == "Ubuntu"
+    - common_motd_disable_ubuntu_news | bool

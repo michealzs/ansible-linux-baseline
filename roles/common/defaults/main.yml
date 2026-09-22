@@ -1,0 +1,77 @@
+---
+# Distributions the baseline is written and tested for.
+common_supported_distributions:
+  - Ubuntu 22.04
+  - Ubuntu 24.04
+  - Debian 12
+
+# Base packages installed on every host.
+common_packages:
+  - curl
+  - vim
+  - htop
+  - unzip
+  - jq
+  - chrony
+  - ca-certificates
+  - less
+
+# Set to true to rename the host to common_hostname.
+common_manage_hostname: false
+common_hostname: "{{ inventory_hostname_short }}"
+
+common_manage_timezone: true
+common_timezone: Etc/UTC
+
+# journald: keep logs across reboots and cap what they may use.
+common_journald_storage: persistent
+common_journald_system_max_use: 1G
+common_journald_system_max_file_size: 128M
+common_journald_max_retention_sec: 1month
+common_journald_compress: "yes"
+
+# Kernel and network hardening written to /etc/sysctl.d/99-baseline.conf.
+common_sysctl_file: /etc/sysctl.d/99-baseline.conf
+common_sysctl_settings:
+  # Reverse path filtering and SYN flood protection
+  net.ipv4.conf.all.rp_filter: 1
+  net.ipv4.conf.default.rp_filter: 1
+  net.ipv4.tcp_syncookies: 1
+  # Do not accept or send ICMP redirects; this is not a router
+  net.ipv4.conf.all.accept_redirects: 0
+  net.ipv4.conf.default.accept_redirects: 0
+  net.ipv4.conf.all.secure_redirects: 0
+  net.ipv4.conf.default.secure_redirects: 0
+  net.ipv4.conf.all.send_redirects: 0
+  net.ipv4.conf.default.send_redirects: 0
+  net.ipv6.conf.all.accept_redirects: 0
+  net.ipv6.conf.default.accept_redirects: 0
+  # Ignore source-routed packets
+  net.ipv4.conf.all.accept_source_route: 0
+  net.ipv4.conf.default.accept_source_route: 0
+  net.ipv6.conf.all.accept_source_route: 0
+  net.ipv6.conf.default.accept_source_route: 0
+  # Log packets with impossible addresses
+  net.ipv4.conf.all.log_martians: 1
+  net.ipv4.conf.default.log_martians: 1
+  # ICMP hygiene
+  net.ipv4.icmp_echo_ignore_broadcasts: 1
+  net.ipv4.icmp_ignore_bogus_error_responses: 1
+  # Hide kernel pointers and dmesg from unprivileged users
+  kernel.kptr_restrict: 2
+  kernel.dmesg_restrict: 1
+  # Restrict following links in world-writable directories
+  fs.protected_hardlinks: 1
+  fs.protected_symlinks: 1
+
+# Optional swap file. Off by default; cloud images usually manage this.
+common_swap_enabled: false
+common_swap_path: /swapfile
+common_swap_size_mb: 2048
+common_swappiness: 10
+
+# Message of the day.
+common_motd_enabled: true
+common_motd_banner: "Authorised access only. Activity on this system is logged."
+# Ubuntu ships a motd-news fetcher that pulls text from Canonical. Off by default.
+common_motd_disable_ubuntu_news: true

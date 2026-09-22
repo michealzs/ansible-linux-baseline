@@ -1,0 +1,108 @@
+---
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PY_COLORS: "1"
+  ANSIBLE_FORCE_COLOR: "1"
+
+jobs:
+  lint:
+    name: yamllint and ansible-lint
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install control node dependencies
+        run: pip install -r requirements.txt
+
+      - name: Install Galaxy collections
+        run: ansible-galaxy collection install -r requirements.yml -p .collections
+
+      - name: Run yamllint
+        run: python -m yamllint -c .yamllint.yaml --strict .
+
+      - name: Run ansible-lint
+        run: ansible-lint --offline
+        env:
+          ANSIBLE_COLLECTIONS_PATH: ${{ github.workspace }}/.collections
+
+  syntax:
+    name: ansible-playbook --syntax-check
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install control node dependencies
+        run: pip install -r requirements.txt
+
+      - name: Install Galaxy collections
+        run: ansible-galaxy collection install -r requirements.yml -p .collections
+
+      - name: Syntax check every playbook
+        run: |
+          for playbook in playbooks/*.yml; do
+            ansible-playbook -i inventory/example/hosts.yml "$playbook" --syntax-check
+          done
+        env:
+          ANSIBLE_COLLECTIONS_PATH: ${{ github.workspace }}/.collections
+
+  molecule:
+    name: molecule (${{ matrix.distro }})
+    runs-on: ubuntu-24.04
+    needs:
+      - lint
+      - syntax
+    strategy:
+      fail-fast: false
+      matrix:
+        distro:
+          - ubuntu2204
+          - ubuntu2404
+          - debian12
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install control node dependencies
+        run: pip install -r requirements.txt
+
+      - name: Install Galaxy collections
+        run: ansible-galaxy collection install -r requirements.yml
+
+      - name: Run the molecule scenario
+        run: molecule test
+        env:
+          MOLECULE_DISTRO: ${{ matrix.distro }}

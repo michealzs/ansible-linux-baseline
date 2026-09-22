@@ -1,0 +1,59 @@
+# {{ ansible_managed }}
+#
+# sshd keeps the first value it reads for each keyword. This file is included
+# from the top of sshd_config and sorts before other drop-ins, so the values
+# here win over anything cloud-init or the distribution ships.
+
+Port {{ ssh_hardening_port }}
+{% for address in ssh_hardening_listen_addresses %}
+ListenAddress {{ address }}
+{% endfor %}
+
+# Authentication
+PermitRootLogin {{ ssh_hardening_permit_root_login }}
+PubkeyAuthentication yes
+PasswordAuthentication {{ 'yes' if ssh_hardening_password_authentication | bool else 'no' }}
+KbdInteractiveAuthentication no
+PermitEmptyPasswords no
+{% if not ssh_hardening_password_authentication | bool %}
+AuthenticationMethods publickey
+{% endif %}
+UsePAM yes
+MaxAuthTries {{ ssh_hardening_max_auth_tries }}
+MaxSessions {{ ssh_hardening_max_sessions }}
+LoginGraceTime {{ ssh_hardening_login_grace_time }}
+{% if ssh_hardening_allow_groups | length > 0 %}
+AllowGroups {{ ssh_hardening_allow_groups | join(' ') }}
+{% endif %}
+{% if ssh_hardening_allow_users | length > 0 %}
+AllowUsers {{ ssh_hardening_allow_users | join(' ') }}
+{% endif %}
+
+# Sessions
+ClientAliveInterval {{ ssh_hardening_client_alive_interval }}
+ClientAliveCountMax {{ ssh_hardening_client_alive_count_max }}
+X11Forwarding {{ 'yes' if ssh_hardening_x11_forwarding | bool else 'no' }}
+AllowAgentForwarding {{ 'yes' if ssh_hardening_allow_agent_forwarding | bool else 'no' }}
+AllowTcpForwarding {{ 'yes' if ssh_hardening_allow_tcp_forwarding | bool else 'no' }}
+PermitTunnel {{ 'yes' if ssh_hardening_permit_tunnel | bool else 'no' }}
+PrintMotd no
+{% if ssh_hardening_banner | length > 0 %}
+Banner {{ ssh_hardening_banner }}
+{% endif %}
+
+# Logging
+SyslogFacility AUTH
+LogLevel {{ ssh_hardening_log_level }}
+
+# Algorithms
+KexAlgorithms {{ ssh_hardening_kex_algorithms | join(',') }}
+Ciphers {{ ssh_hardening_ciphers | join(',') }}
+MACs {{ ssh_hardening_macs | join(',') }}
+HostKeyAlgorithms {{ ssh_hardening_host_key_algorithms | join(',') }}
+{% if ssh_hardening_extra_settings | length > 0 %}
+
+# Extra settings
+{% for keyword, value in ssh_hardening_extra_settings.items() %}
+{{ keyword }} {{ value }}
+{% endfor %}
+{% endif %}

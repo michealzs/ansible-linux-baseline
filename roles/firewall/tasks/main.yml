@@ -1,0 +1,57 @@
+---
+- name: Install ufw
+  ansible.builtin.apt:
+    name: ufw
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Configure IPv6 handling
+  ansible.builtin.lineinfile:
+    path: /etc/default/ufw
+    regexp: '^IPV6='
+    line: "IPV6={{ 'yes' if firewall_ipv6 | bool else 'no' }}"
+
+- name: Set the default policy for incoming traffic
+  community.general.ufw:
+    direction: incoming
+    default: "{{ firewall_default_incoming }}"
+
+- name: Set the default policy for outgoing traffic
+  community.general.ufw:
+    direction: outgoing
+    default: "{{ firewall_default_outgoing }}"
+
+- name: Set the default policy for routed traffic
+  community.general.ufw:
+    direction: routed
+    default: "{{ firewall_default_routed }}"
+
+- name: Allow SSH with rate limiting
+  community.general.ufw:
+    rule: "{{ 'limit' if firewall_ssh_rate_limit | bool else 'allow' }}"
+    port: "{{ firewall_ssh_port | string }}"
+    proto: tcp
+    comment: SSH
+
+- name: Apply extra firewall rules
+  community.general.ufw:
+    rule: "{{ item.rule | default('allow') }}"
+    port: "{{ item.port | string }}"
+    proto: "{{ item.proto | default('tcp') }}"
+    src: "{{ item.src | default(omit) }}"
+    dest: "{{ item.dest | default(omit) }}"
+    interface: "{{ item.interface | default(omit) }}"
+    direction: "{{ item.direction | default(omit) }}"
+    comment: "{{ item.comment | default(omit) }}"
+  loop: "{{ firewall_rules }}"
+  loop_control:
+    label: "{{ item.rule | default('allow') }} {{ item.port }}/{{ item.proto | default('tcp') }}"
+
+- name: Set ufw logging level
+  community.general.ufw:
+    logging: "{{ firewall_logging }}"
+
+- name: Enable ufw
+  community.general.ufw:
+    state: enabled

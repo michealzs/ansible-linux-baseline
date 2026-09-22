@@ -1,0 +1,48 @@
+## {{ ansible_managed }}
+## Compiled into /etc/audit/audit.rules by augenrules together with the
+## distribution's own rules.d files. Do not add -D here.
+
+## Identity files
+{% for path in auditd_watch_identity %}
+-w {{ path }} -p wa -k identity
+{% endfor %}
+
+## sudo configuration
+{% for path in auditd_watch_sudoers %}
+-w {{ path }} -p wa -k sudoers
+{% endfor %}
+
+## sshd configuration
+{% for path in auditd_watch_sshd %}
+-w {{ path }} -p wa -k sshd
+{% endfor %}
+
+## Login records
+{% for path in auditd_watch_logins %}
+-w {{ path }} -p wa -k logins
+{% endfor %}
+
+## Privileged commands run by real users
+{% for path in auditd_privileged_commands %}
+-a always,exit -F path={{ path }} -F perm=x -F auid>=1000 -F auid!=unset -k privileged
+{% endfor %}
+{% if auditd_log_kernel_modules | bool %}
+
+## Kernel module loading
+-w /usr/sbin/insmod -p x -k modules
+-w /usr/sbin/rmmod -p x -k modules
+-w /usr/sbin/modprobe -p x -k modules
+-a always,exit -F arch=b64 -S init_module,finit_module,delete_module -k modules
+{% endif %}
+{% if auditd_extra_rules | length > 0 %}
+
+## Extra rules
+{% for rule in auditd_extra_rules %}
+{{ rule }}
+{% endfor %}
+{% endif %}
+{% if auditd_immutable | bool %}
+
+## Lock the configuration until reboot
+-e 2
+{% endif %}

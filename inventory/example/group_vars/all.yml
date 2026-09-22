@@ -1,0 +1,31 @@
+---
+# Connection. The bootstrap account on a fresh image is usually "ubuntu",
+# "debian" or "root"; after the first run, switch to one of the admins below.
+ansible_user: ubuntu
+
+# Admin accounts. The key below is a placeholder, not a real key.
+users_admin_group: admins
+users_admins:
+  - name: alice
+    comment: Alice Example
+    authorized_keys:
+      - "ssh-ed25519 AAAA...example alice@example.com"
+
+# Only members of this group may log in over SSH. Same group as above.
+ssh_hardening_allow_groups:
+  - admins
+ssh_hardening_port: 22
+
+# Networks that fail2ban never bans, for example the office or a bastion.
+fail2ban_ignoreip:
+  - 192.0.2.0/24
+
+# Where Prometheus scrapes from.
+node_exporter_allowed_cidrs:
+  - 192.0.2.0/24
+
+# Reboots for kernel updates happen only when this is true.
+unattended_upgrades_automatic_reboot: false
+unattended_upgrades_automatic_reboot_time: "03:30"
+
+common_timezone: Etc/UTC

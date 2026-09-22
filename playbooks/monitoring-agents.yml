@@ -1,0 +1,11 @@
+---
+- name: Install node_exporter on monitored hosts
+  hosts: monitoring_agents
+  become: true
+  serial: "{{ baseline_serial | default('50%') }}"
+  max_fail_percentage: 0
+  roles:
+    - role: node_exporter
+      tags:
+        - node_exporter
+        - monitoring

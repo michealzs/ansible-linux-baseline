@@ -1,0 +1,48 @@
+---
+# Full baseline. Hosts are processed in batches (serial) and the play stops at
+# the first batch with a failure, so a bad change never reaches the whole fleet.
+#
+#   ansible-playbook playbooks/site.yml --check --diff      # dry run first
+#   ansible-playbook playbooks/site.yml -e baseline_serial=1
+#   ansible-playbook playbooks/site.yml --tags ssh_hardening,firewall
+
+- name: Apply the Linux baseline
+  hosts: baseline
+  become: true
+  serial: "{{ baseline_serial | default('25%') }}"
+  max_fail_percentage: 0
+  roles:
+    - role: common
+      tags:
+        - common
+        - base
+    - role: users
+      tags:
+        - users
+        - base
+    - role: ssh_hardening
+      tags:
+        - ssh_hardening
+        - hardening
+    - role: firewall
+      tags:
+        - firewall
+        - hardening
+    - role: fail2ban
+      tags:
+        - fail2ban
+        - hardening
+    - role: unattended_upgrades
+      tags:
+        - unattended_upgrades
+        - updates
+    - role: auditd
+      tags:
+        - auditd
+        - hardening
+
+- name: Configure Docker hosts
+  ansible.builtin.import_playbook: docker-hosts.yml
+
+- name: Install monitoring agents
+  ansible.builtin.import_playbook: monitoring-agents.yml

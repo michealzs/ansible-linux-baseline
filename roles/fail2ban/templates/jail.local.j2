@@ -1,0 +1,15 @@
+# {{ ansible_managed }}
+[DEFAULT]
+ignoreip = 127.0.0.1/8 ::1{% for ip in fail2ban_ignoreip %} {{ ip }}{% endfor %}
+
+bantime = {{ fail2ban_bantime }}
+findtime = {{ fail2ban_findtime }}
+maxretry = {{ fail2ban_maxretry }}
+backend = {{ fail2ban_backend }}
+banaction = {{ fail2ban_banaction }}
+banaction_allports = {{ fail2ban_banaction }}
+
+[sshd]
+enabled = {{ 'true' if fail2ban_sshd_enabled | bool else 'false' }}
+port = {{ fail2ban_sshd_port }}
+mode = {{ fail2ban_sshd_mode }}

@@ -1,0 +1,32 @@
+---
+# Only security origins by default. Override unattended_upgrades_origins for
+# a different policy; the distribution-specific lists are the fallbacks.
+unattended_upgrades_origins_ubuntu:
+  - "${distro_id}:${distro_codename}-security"
+  - "${distro_id}ESMApps:${distro_codename}-apps-security"
+  - "${distro_id}ESM:${distro_codename}-infra-security"
+unattended_upgrades_origins_debian:
+  - "origin=Debian,codename=${distro_codename},label=Debian-Security"
+  - "origin=Debian,codename=${distro_codename}-security,label=Debian-Security"
+unattended_upgrades_origins: >-
+  {{ unattended_upgrades_origins_debian if ansible_distribution == 'Debian'
+     else unattended_upgrades_origins_ubuntu }}
+
+# Packages that are never upgraded automatically.
+unattended_upgrades_package_blacklist: []
+
+# Reboot when an upgrade asks for it, inside the window below (local time).
+unattended_upgrades_automatic_reboot: false
+unattended_upgrades_automatic_reboot_time: "03:30"
+unattended_upgrades_automatic_reboot_with_users: false
+
+unattended_upgrades_remove_unused_kernel_packages: true
+unattended_upgrades_remove_unused_dependencies: true
+
+# Email report. Needs a working MTA on the host. Empty means no mail.
+unattended_upgrades_mail: ""
+# always, only-on-error, on-change
+unattended_upgrades_mail_report: on-change
+
+# Days between "apt-get autoclean" runs.
+unattended_upgrades_autoclean_interval: 7

@@ -1,0 +1,59 @@
+---
+- name: Create the node_exporter group
+  ansible.builtin.group:
+    name: "{{ node_exporter_group }}"
+    system: true
+    state: present
+
+- name: Create the node_exporter system user
+  ansible.builtin.user:
+    name: "{{ node_exporter_user }}"
+    group: "{{ node_exporter_group }}"
+    system: true
+    shell: /usr/sbin/nologin
+    home: /nonexistent
+    create_home: false
+    state: present
+
+- name: Check the installed node_exporter version
+  ansible.builtin.command:
+    cmd: "{{ node_exporter_binary }} --version"
+  register: node_exporter_installed
+  changed_when: false
+  failed_when: false
+
+- name: Download and install node_exporter
+  ansible.builtin.include_tasks: install.yml
+  when: ("version " ~ node_exporter_version ~ " ") not in (node_exporter_installed.stdout ~ node_exporter_installed.stderr)
+
+- name: Ensure the textfile collector directory exists
+  ansible.builtin.file:
+    path: "{{ node_exporter_textfile_dir }}"
+    state: directory
+    owner: root
+    group: "{{ node_exporter_group }}"
+    mode: "0755"
+
+- name: Deploy the node_exporter systemd unit
+  ansible.builtin.template:
+    src: node_exporter.service.j2
+    dest: /etc/systemd/system/node_exporter.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - Reload systemd
+    - Restart node_exporter
+
+- name: Flush handlers so the unit is loaded before it is started
+  ansible.builtin.meta: flush_handlers
+
+- name: Ensure node_exporter is enabled and running
+  ansible.builtin.systemd_service:
+    name: node_exporter
+    enabled: true
+    state: started
+
+- name: Manage the firewall rule for the metrics port
+  ansible.builtin.include_tasks: firewall.yml
+  when: node_exporter_manage_firewall | bool

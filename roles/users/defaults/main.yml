@@ -1,0 +1,30 @@
+---
+# Admin users to create. Each entry needs a name and at least one public key.
+# Placeholder keys below are not real keys; replace them in group_vars.
+#
+# users_admins:
+#   - name: alice
+#     comment: Alice Example
+#     shell: /bin/bash
+#     groups: []
+#     authorized_keys:
+#       - "ssh-ed25519 AAAA...example alice@example.com"
+users_admins: []
+
+# Group that grants sudo. ssh_hardening uses the same group in AllowGroups.
+users_admin_group: admins
+users_default_shell: /bin/bash
+
+# NOPASSWD sudo for the admin group. Passwords are locked for these accounts,
+# so a password prompt would only lock them out.
+users_sudo_nopasswd: true
+users_sudoers_file: "/etc/sudoers.d/90-{{ users_admin_group }}"
+
+# Lock the password field so the accounts are key-only.
+users_lock_passwords: true
+
+# When true the role owns authorized_keys entirely: keys not listed are removed.
+users_authorized_keys_exclusive: true
+
+# Accounts to remove, for example a previous generation of admins.
+users_removed: []

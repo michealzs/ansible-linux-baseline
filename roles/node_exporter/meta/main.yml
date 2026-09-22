@@ -1,0 +1,21 @@
+---
+galaxy_info:
+  role_name: node_exporter
+  namespace: michealzs
+  author: Micheal
+  description: Prometheus node_exporter from a pinned, checksum-verified GitHub release under a sandboxed systemd unit.
+  license: MIT
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - all
+    - name: Debian
+      versions:
+        - all
+  galaxy_tags:
+    - prometheus
+    - monitoring
+    - metrics
+
+dependencies: []

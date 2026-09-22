@@ -1,0 +1,38 @@
+---
+# yamllint configuration shared by pre-commit, CI, and ansible-lint.
+
+extends: default
+
+yaml-files:
+  - "*.yaml"
+  - "*.yml"
+  - ".yamllint"
+  - ".ansible-lint"
+
+ignore: |
+  .venv/
+  .collections/
+  .facts_cache/
+  .cache/
+  molecule/*/.molecule/
+
+rules:
+  line-length:
+    max: 160
+    allow-non-breakable-inline-mappings: true
+  truthy:
+    # Ansible style prefers true/false, but yes/no still appear in some
+    # module arguments and templates that are fed through YAML.
+    allowed-values: ["true", "false", "yes", "no"]
+    check-keys: false
+  comments:
+    min-spaces-from-content: 1
+  comments-indentation: false
+  braces:
+    max-spaces-inside: 1
+  octal-values:
+    forbid-implicit-octal: true
+    forbid-explicit-octal: true
+  indentation:
+    spaces: 2
+    indent-sequences: true

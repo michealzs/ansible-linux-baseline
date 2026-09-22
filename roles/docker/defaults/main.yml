@@ -1,0 +1,45 @@
+---
+docker_packages:
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  - docker-buildx-plugin
+  - docker-compose-plugin
+
+# Distribution packages that conflict with Docker CE, per docs.docker.com.
+docker_remove_conflicting_packages: true
+docker_conflicting_packages:
+  - docker.io
+  - docker-doc
+  - docker-compose
+  - docker-compose-v2
+  - podman-docker
+  - containerd
+  - runc
+
+docker_apt_keyring: /etc/apt/keyrings/docker.asc
+docker_apt_key_url: "https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg"
+docker_apt_arch: >-
+  {{ {'x86_64': 'amd64', 'aarch64': 'arm64', 'armv7l': 'armhf'}.get(ansible_architecture, ansible_architecture) }}
+docker_apt_repo: >-
+  deb [arch={{ docker_apt_arch }} signed-by={{ docker_apt_keyring }}]
+  https://download.docker.com/linux/{{ ansible_distribution | lower }}
+  {{ ansible_distribution_release }} stable
+
+# Written to /etc/docker/daemon.json. Keys are passed through as-is.
+docker_daemon_config:
+  log-driver: json-file
+  log-opts:
+    max-size: 10m
+    max-file: "3"
+  live-restore: true
+  default-address-pools:
+    - base: 172.20.0.0/14
+      size: 24
+    - base: 10.200.0.0/16
+      size: 24
+
+# Membership of the docker group is equivalent to root. Off by default.
+docker_add_admin_users_to_group: false
+# Additional accounts to add to the docker group regardless of the toggle.
+docker_users: []

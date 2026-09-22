@@ -1,0 +1,23 @@
+---
+# Docker hosts serve HTTP, so open the web ports.
+firewall_rules:
+  - port: 80
+    proto: tcp
+    comment: HTTP
+  - port: 443
+    proto: tcp
+    comment: HTTPS
+
+# Let the admins run docker without sudo on these hosts.
+docker_add_admin_users_to_group: true
+
+# Larger log cap than the role default for busy web containers.
+docker_daemon_config:
+  log-driver: json-file
+  log-opts:
+    max-size: 50m
+    max-file: "5"
+  live-restore: true
+  default-address-pools:
+    - base: 172.20.0.0/14
+      size: 24

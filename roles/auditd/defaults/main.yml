@@ -1,0 +1,49 @@
+---
+auditd_rules_file: /etc/audit/rules.d/99-baseline.rules
+
+# Files whose changes are recorded (write and attribute changes).
+auditd_watch_identity:
+  - /etc/passwd
+  - /etc/group
+  - /etc/shadow
+  - /etc/gshadow
+  - /etc/security/opasswd
+auditd_watch_sudoers:
+  - /etc/sudoers
+  - /etc/sudoers.d/
+auditd_watch_sshd:
+  - /etc/ssh/sshd_config
+  - /etc/ssh/sshd_config.d/
+auditd_watch_logins:
+  - /var/log/faillog
+  - /var/log/lastlog
+
+# Privileged commands whose execution by real users is recorded.
+auditd_privileged_commands:
+  - /usr/bin/sudo
+  - /usr/bin/su
+  - /usr/bin/passwd
+  - /usr/bin/chsh
+  - /usr/bin/chfn
+  - /usr/bin/newgrp
+  - /usr/bin/gpasswd
+  - /usr/sbin/usermod
+  - /usr/sbin/useradd
+  - /usr/sbin/userdel
+
+auditd_log_kernel_modules: true
+
+# Raw rules appended verbatim after the generated ones.
+auditd_extra_rules: []
+
+# -e 2 makes the rules immutable until reboot. Re-runs of this role would then
+# report a failed rule load, so it is off by default.
+auditd_immutable: false
+
+# Settings applied to /etc/audit/auditd.conf.
+auditd_conf_settings:
+  max_log_file: 50
+  num_logs: 5
+  max_log_file_action: rotate
+  space_left_action: syslog
+  admin_space_left_action: suspend

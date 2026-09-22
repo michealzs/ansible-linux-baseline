@@ -1,0 +1,139 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Read the effective sshd configuration
+      ansible.builtin.command:
+        cmd: /usr/sbin/sshd -T
+      register: verify_sshd_config
+      changed_when: false
+
+    - name: Assert the sshd hardening is in effect
+      ansible.builtin.assert:
+        that:
+          - "'passwordauthentication no' in verify_sshd_config.stdout_lines"
+          - "'permitrootlogin no' in verify_sshd_config.stdout_lines"
+          - "'pubkeyauthentication yes' in verify_sshd_config.stdout_lines"
+          - "'kbdinteractiveauthentication no' in verify_sshd_config.stdout_lines"
+          - "'maxauthtries 3' in verify_sshd_config.stdout_lines"
+          - "'x11forwarding no' in verify_sshd_config.stdout_lines"
+          - "'allowgroups admins' in verify_sshd_config.stdout_lines"
+          - "'logingracetime 30' in verify_sshd_config.stdout_lines"
+        quiet: true
+
+    - name: Confirm the admin account exists, is locked and holds a key
+      ansible.builtin.command:
+        cmd: passwd --status alice
+      register: verify_admin_status
+      changed_when: false
+
+    - name: Assert the admin password is locked
+      ansible.builtin.assert:
+        that:
+          - verify_admin_status.stdout.split()[1] == "L"
+        quiet: true
+
+    - name: Validate the sudoers drop-in
+      ansible.builtin.command:
+        cmd: /usr/sbin/visudo -cf /etc/sudoers.d/90-admins
+      changed_when: false
+
+    - name: Read ufw status
+      ansible.builtin.command:
+        cmd: ufw status verbose
+      register: verify_ufw_status
+      changed_when: false
+
+    - name: Assert ufw is active with the expected policy and SSH rule
+      ansible.builtin.assert:
+        that:
+          - "'Status: active' in verify_ufw_status.stdout"
+          - "'deny (incoming)' in verify_ufw_status.stdout"
+          - "'allow (outgoing)' in verify_ufw_status.stdout"
+          - verify_ufw_status.stdout is search('22/tcp\\s+LIMIT IN')
+          - verify_ufw_status.stdout is search('9100/tcp\\s+ALLOW IN\\s+10.0.0.0/8')
+        quiet: true
+
+    - name: Read the sshd jail status from fail2ban
+      ansible.builtin.command:
+        cmd: fail2ban-client status sshd
+      register: verify_fail2ban
+      changed_when: false
+
+    - name: Assert the sshd jail is loaded
+      ansible.builtin.assert:
+        that:
+          - "'Status for the jail: sshd' in verify_fail2ban.stdout"
+          - "'Journal matches' in verify_fail2ban.stdout"
+        quiet: true
+
+    - name: Read the live value of a hardened sysctl key
+      ansible.builtin.command:
+        cmd: sysctl -n net.ipv4.tcp_syncookies
+      register: verify_syncookies
+      changed_when: false
+
+    - name: Assert sysctl hardening is applied
+      ansible.builtin.assert:
+        that:
+          - verify_syncookies.stdout == "1"
+        quiet: true
+
+    - name: Read the periodic apt configuration
+      ansible.builtin.command:
+        cmd: apt-config dump APT::Periodic::Unattended-Upgrade
+      register: verify_apt_periodic
+      changed_when: false
+
+    - name: Assert unattended upgrades are switched on
+      ansible.builtin.assert:
+        that:
+          - "'\"1\"' in verify_apt_periodic.stdout"
+        quiet: true
+
+    - name: Query the node_exporter metrics endpoint
+      ansible.builtin.uri:
+        url: http://127.0.0.1:9100/metrics
+        return_content: true
+        status_code: 200
+      register: verify_node_exporter
+      retries: 5
+      delay: 2
+      until: verify_node_exporter.status == 200
+
+    - name: Collect service facts
+      ansible.builtin.service_facts:
+
+    - name: Find the node_exporter process
+      ansible.builtin.command:
+        cmd: pgrep -x node_exporter
+      register: verify_node_exporter_pid
+      changed_when: false
+
+    - name: Read the process status of node_exporter from /proc
+      ansible.builtin.slurp:
+        src: "/proc/{{ verify_node_exporter_pid.stdout_lines[0] }}/status"
+      register: verify_node_exporter_proc
+
+    - name: Look up the node_exporter account
+      ansible.builtin.getent:
+        database: passwd
+        key: node_exporter
+
+    - name: Read the installed unit file
+      ansible.builtin.slurp:
+        src: /etc/systemd/system/node_exporter.service
+      register: verify_node_exporter_unit
+
+    - name: Assert node_exporter is up, sandboxed and serving metrics
+      ansible.builtin.assert:
+        that:
+          - "'node_exporter_build_info' in verify_node_exporter.content"
+          - ansible_facts.services['node_exporter.service'].state == 'running'
+          - (verify_node_exporter_proc.content | b64decode) is search('Uid:\\s+' ~ getent_passwd.node_exporter[1] ~ '\\s')
+          - (verify_node_exporter_proc.content | b64decode) is search('NoNewPrivs:\\s+1')
+          - "'ProtectSystem=strict' in (verify_node_exporter_unit.content | b64decode)"
+          - "'PrivateTmp=true' in (verify_node_exporter_unit.content | b64decode)"
+        quiet: true

@@ -1,0 +1,26 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Ansible
+.collections/
+.facts_cache/
+.cache/
+*.retry
+*.log
+
+# Molecule
+molecule/*/.molecule/
+
+# Editors and OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Local inventories with real hosts, keys, or vault files
+inventory/local/
+inventory/production/
+*.vault

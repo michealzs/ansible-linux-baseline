@@ -1,0 +1,35 @@
+---
+# Applies the baseline roles inside the test container. docker and auditd are
+# left out on purpose: both need a real kernel and init and cannot run in a
+# container. They are covered by ansible-lint and the syntax check.
+
+- name: Converge
+  hosts: all
+  become: true
+  vars:
+    common_manage_hostname: false
+    users_admins:
+      - name: alice
+        comment: Alice Example
+        authorized_keys:
+          - "ssh-ed25519 AAAA...example alice@example.com"
+    ssh_hardening_allow_groups:
+      - admins
+    fail2ban_ignoreip:
+      - 172.16.0.0/12
+    node_exporter_allowed_cidrs:
+      - 10.0.0.0/8
+      - 172.16.0.0/12
+  pre_tasks:
+    - name: Update the apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 600
+  roles:
+    - role: common
+    - role: users
+    - role: ssh_hardening
+    - role: firewall
+    - role: fail2ban
+    - role: unattended_upgrades
+    - role: node_exporter

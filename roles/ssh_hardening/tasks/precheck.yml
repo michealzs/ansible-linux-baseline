@@ -1,0 +1,48 @@
+---
+# Two things must be true before password logins are switched off:
+#   1. at least one account already has a public key installed, and
+#   2. every group named in AllowGroups exists and has at least one member.
+# Otherwise the next restart of sshd locks everyone out.
+
+- name: Find authorized_keys files that contain at least one public key
+  ansible.builtin.find:
+    paths: "{{ ssh_hardening_lockout_check_paths }}"
+    patterns: authorized_keys
+    recurse: true
+    hidden: true
+    depth: 3
+    contains: '^(ssh-ed25519|ssh-rsa|ecdsa-sha2-nistp[0-9]+|sk-ssh-ed25519@openssh\.com|sk-ecdsa-sha2-nistp256@openssh\.com)\s'
+    read_whole_file: false
+  register: ssh_hardening_key_files
+
+- name: Refuse to disable password authentication without an installed public key
+  ansible.builtin.assert:
+    that:
+      - ssh_hardening_key_files.matched | int > 0
+    fail_msg: >-
+      No authorized_keys file with a public key was found under
+      {{ ssh_hardening_lockout_check_paths | join(', ') }}. Apply the users role first,
+      or set ssh_hardening_skip_lockout_check=true if you have another way in.
+    success_msg: "Found {{ ssh_hardening_key_files.matched }} authorized_keys file(s) with a public key."
+
+- name: Look up every group listed in AllowGroups
+  ansible.builtin.getent:
+    database: group
+    key: "{{ item }}"
+    fail_key: false
+  loop: "{{ ssh_hardening_allow_groups }}"
+  register: ssh_hardening_allow_groups_lookup
+
+- name: Refuse to set AllowGroups to a group that does not exist or has no members
+  ansible.builtin.assert:
+    that:
+      - item.ansible_facts.getent_group[item.item] is not none
+      - item.ansible_facts.getent_group[item.item][2] | length > 0
+    fail_msg: >-
+      AllowGroups names '{{ item.item }}', but that group is missing or empty on
+      {{ inventory_hostname }}. Add an admin to it (the users role does this) or
+      change ssh_hardening_allow_groups.
+    quiet: true
+  loop: "{{ ssh_hardening_allow_groups_lookup.results | default([]) }}"
+  loop_control:
+    label: "{{ item.item }}"

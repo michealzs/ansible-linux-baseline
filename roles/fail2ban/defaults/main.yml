@@ -1,0 +1,20 @@
+---
+fail2ban_bantime: 1h
+fail2ban_findtime: 10m
+fail2ban_maxretry: 5
+
+# Addresses that are never banned. Loopback is always included.
+fail2ban_ignoreip: []
+
+# Bans are applied through ufw so they show up in "ufw status". Use
+# iptables-multiport on hosts that do not run the firewall role.
+fail2ban_banaction: ufw
+
+# systemd is the only backend that works on Debian 12, which has no
+# /var/log/auth.log unless rsyslog is installed.
+fail2ban_backend: systemd
+
+fail2ban_sshd_enabled: true
+fail2ban_sshd_port: "{{ ssh_hardening_port | default(22) }}"
+# "aggressive" also counts failed publickey attempts and pre-auth disconnects.
+fail2ban_sshd_mode: normal

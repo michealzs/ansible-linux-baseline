@@ -1,0 +1,51 @@
+---
+# Run with MOLECULE_DISTRO=ubuntu2204|ubuntu2404|debian12 (default ubuntu2404).
+# The geerlingguy images ship systemd, which the roles need for service
+# management, so the container runs privileged with the host cgroup namespace.
+
+dependency:
+  name: galaxy
+  options:
+    requirements-file: ${MOLECULE_PROJECT_DIRECTORY}/requirements.yml
+
+driver:
+  name: docker
+
+platforms:
+  - name: baseline-${MOLECULE_DISTRO:-ubuntu2404}
+    image: geerlingguy/docker-${MOLECULE_DISTRO:-ubuntu2404}-ansible:latest
+    command: ""
+    pre_build_image: true
+    privileged: true
+    cgroupns_mode: host
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+
+provisioner:
+  name: ansible
+  env:
+    ANSIBLE_ROLES_PATH: ${MOLECULE_PROJECT_DIRECTORY}/roles
+  config_options:
+    defaults:
+      callback_result_format: yaml
+      interpreter_python: auto_silent
+  playbooks:
+    converge: converge.yml
+    verify: verify.yml
+
+verifier:
+  name: ansible
+
+scenario:
+  test_sequence:
+    - dependency
+    - cleanup
+    - destroy
+    - syntax
+    - create
+    - prepare
+    - converge
+    - idempotence
+    - verify
+    - cleanup
+    - destroy

@@ -1,0 +1,23 @@
+---
+- name: Check that ufw is installed
+  ansible.builtin.stat:
+    path: /usr/sbin/ufw
+  register: node_exporter_ufw
+
+- name: Fail if ufw is missing while node_exporter_manage_firewall is set
+  ansible.builtin.assert:
+    that:
+      - node_exporter_ufw.stat.exists
+    fail_msg: >-
+      node_exporter_manage_firewall is true but ufw is not installed. Apply the
+      firewall role first or set node_exporter_manage_firewall: false.
+    quiet: true
+
+- name: Allow the metrics port from the monitoring networks
+  community.general.ufw:
+    rule: allow
+    port: "{{ node_exporter_port | string }}"
+    proto: tcp
+    src: "{{ item }}"
+    comment: node_exporter
+  loop: "{{ node_exporter_allowed_cidrs }}"

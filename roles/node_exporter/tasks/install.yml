@@ -1,0 +1,28 @@
+---
+- name: Download the node_exporter release archive
+  ansible.builtin.get_url:
+    url: "{{ node_exporter_base_url }}/{{ node_exporter_archive }}"
+    dest: "{{ node_exporter_download_dir }}/{{ node_exporter_archive }}"
+    checksum: "{{ node_exporter_checksum }}"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Unpack the release archive
+  ansible.builtin.unarchive:
+    src: "{{ node_exporter_download_dir }}/{{ node_exporter_archive }}"
+    dest: "{{ node_exporter_download_dir }}"
+    remote_src: true
+    owner: root
+    group: root
+    creates: "{{ node_exporter_download_dir }}/{{ node_exporter_archive | regex_replace('\\.tar\\.gz$', '') }}/node_exporter"
+
+- name: Install the node_exporter binary
+  ansible.builtin.copy:
+    src: "{{ node_exporter_download_dir }}/{{ node_exporter_archive | regex_replace('\\.tar\\.gz$', '') }}/node_exporter"
+    dest: "{{ node_exporter_binary }}"
+    remote_src: true
+    owner: root
+    group: root
+    mode: "0755"
+  notify: Restart node_exporter

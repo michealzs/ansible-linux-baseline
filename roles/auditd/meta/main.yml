@@ -1,0 +1,21 @@
+---
+galaxy_info:
+  role_name: auditd
+  namespace: michealzs
+  author: Micheal
+  description: auditd with a small rule set covering identity files, sudoers, sshd config and privileged commands.
+  license: MIT
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - all
+    - name: Debian
+      versions:
+        - all
+  galaxy_tags:
+    - audit
+    - security
+    - compliance
+
+dependencies: []

@@ -1,0 +1,5 @@
+---
+# Final list of accounts added to the docker group.
+docker_group_members: >-
+  {{ (docker_users + ((users_admins | default([]) | map(attribute='name') | list)
+     if docker_add_admin_users_to_group | bool else [])) | unique }}

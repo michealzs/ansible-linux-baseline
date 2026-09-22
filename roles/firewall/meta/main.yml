@@ -1,0 +1,21 @@
+---
+galaxy_info:
+  role_name: firewall
+  namespace: michealzs
+  author: Micheal
+  description: ufw with deny-by-default incoming, rate-limited SSH and a list of extra rules.
+  license: MIT
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - all
+    - name: Debian
+      versions:
+        - all
+  galaxy_tags:
+    - firewall
+    - ufw
+    - security
+
+dependencies: []

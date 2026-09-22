@@ -1,0 +1,21 @@
+---
+galaxy_info:
+  role_name: users
+  namespace: michealzs
+  author: Micheal
+  description: Key-only admin accounts with sudo through a validated sudoers.d drop-in.
+  license: MIT
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - all
+    - name: Debian
+      versions:
+        - all
+  galaxy_tags:
+    - users
+    - sudo
+    - baseline
+
+dependencies: []

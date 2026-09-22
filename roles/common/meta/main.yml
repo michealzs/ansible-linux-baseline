@@ -1,0 +1,21 @@
+---
+galaxy_info:
+  role_name: common
+  namespace: michealzs
+  author: Micheal
+  description: Base packages, timezone, journald, sysctl hardening, optional swap and MOTD for Debian family hosts.
+  license: MIT
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - all
+    - name: Debian
+      versions:
+        - all
+  galaxy_tags:
+    - system
+    - baseline
+    - hardening
+
+dependencies: []

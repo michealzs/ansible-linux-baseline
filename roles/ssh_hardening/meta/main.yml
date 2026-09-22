@@ -1,0 +1,21 @@
+---
+galaxy_info:
+  role_name: ssh_hardening
+  namespace: michealzs
+  author: Micheal
+  description: Key-only sshd with modern algorithms, delivered as a validated sshd_config.d drop-in with a lockout pre-check.
+  license: MIT
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - all
+    - name: Debian
+      versions:
+        - all
+  galaxy_tags:
+    - ssh
+    - security
+    - hardening
+
+dependencies: []

@@ -1,0 +1,7 @@
+---
+# The auditd unit runs "augenrules --load" on start, so a restart both
+# reloads auditd.conf and compiles /etc/audit/rules.d into the live ruleset.
+- name: Restart auditd
+  ansible.builtin.systemd_service:
+    name: auditd
+    state: restarted

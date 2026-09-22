@@ -1,0 +1,21 @@
+---
+galaxy_info:
+  role_name: unattended_upgrades
+  namespace: michealzs
+  author: Micheal
+  description: Automatic security updates with an optional reboot window and email report.
+  license: MIT
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - all
+    - name: Debian
+      versions:
+        - all
+  galaxy_tags:
+    - apt
+    - updates
+    - security
+
+dependencies: []

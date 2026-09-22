@@ -1,0 +1,45 @@
+---
+- name: Ensure the admin group exists
+  ansible.builtin.group:
+    name: "{{ users_admin_group }}"
+    state: present
+
+- name: Create admin users
+  ansible.builtin.user:
+    name: "{{ item.name }}"
+    comment: "{{ item.comment | default(omit) }}"
+    shell: "{{ item.shell | default(users_default_shell) }}"
+    groups: "{{ [users_admin_group] + (item.groups | default([])) }}"
+    append: true
+    create_home: true
+    password_lock: "{{ users_lock_passwords | bool }}"
+    state: present
+  loop: "{{ users_admins }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Install authorized keys for admin users
+  ansible.posix.authorized_key:
+    user: "{{ item.name }}"
+    key: "{{ item.authorized_keys | join('\n') }}"
+    exclusive: "{{ users_authorized_keys_exclusive | bool }}"
+    state: present
+  loop: "{{ users_admins }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Grant sudo to the admin group
+  ansible.builtin.template:
+    src: sudoers.j2
+    dest: "{{ users_sudoers_file }}"
+    owner: root
+    group: root
+    mode: "0440"
+    validate: /usr/sbin/visudo -cf %s
+
+- name: Remove retired accounts
+  ansible.builtin.user:
+    name: "{{ item }}"
+    state: absent
+    remove: true
+  loop: "{{ users_removed }}"
