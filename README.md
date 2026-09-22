@@ -1,5 +1,8 @@
 # ansible-linux-baseline
 
+[![CI](https://github.com/michealzs/ansible-linux-baseline/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/michealzs/ansible-linux-baseline/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 Ansible roles and playbooks that take a fresh Ubuntu 22.04, Ubuntu 24.04 or
 Debian 12 host to a hardened, monitored baseline: key-only SSH with a lockout
 pre-check, ufw, fail2ban, automatic security updates, auditd, sysctl
