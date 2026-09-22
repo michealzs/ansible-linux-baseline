@@ -62,12 +62,24 @@
     mode: "0644"
   notify: Restart journald
 
+- name: Record whether this host is a container
+  ansible.builtin.set_fact:
+    common_is_container: >-
+      {{
+        ansible_virtualization_role | default('') == 'guest'
+        and ansible_virtualization_type | default('') in
+        ['docker', 'containerd', 'podman', 'lxc', 'container']
+      }}
+
 - name: Apply sysctl hardening
+  # Containers share the host kernel, so the values are written to the sysctl
+  # file but not pushed into the running kernel there. Applying them would
+  # either fail on a read-only /proc/sys or change settings outside this host.
   ansible.posix.sysctl:
     name: "{{ item.key }}"
     value: "{{ item.value }}"
     sysctl_file: "{{ common_sysctl_file }}"
-    sysctl_set: true
+    sysctl_set: "{{ common_sysctl_set | bool and not common_is_container | bool }}"
     reload: false
     ignoreerrors: true
     state: present

@@ -19,6 +19,7 @@ to the wrong box.
 | `common_journald_system_max_use` | `1G` | Disk cap for the persistent journal |
 | `common_journald_max_retention_sec` | `1month` | Drop journal entries older than this |
 | `common_sysctl_settings` | see `defaults/main.yml` | Key/value map written to `/etc/sysctl.d/99-baseline.conf` |
+| `common_sysctl_set` | `true` | Also push the values into the running kernel. Forced off on containers, which share their host's kernel |
 | `common_swap_enabled` | `false` | Create and activate a swap file |
 | `common_swap_size_mb` | `2048` | Swap file size |
 | `common_motd_banner` | short legal notice | First line of `/etc/motd` |

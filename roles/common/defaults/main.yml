@@ -32,6 +32,12 @@ common_journald_compress: "yes"
 
 # Kernel and network hardening written to /etc/sysctl.d/99-baseline.conf.
 common_sysctl_file: /etc/sysctl.d/99-baseline.conf
+
+# Apply the values to the running kernel as well as writing the file. A
+# container shares its host's kernel, so this is turned off automatically
+# there and only the file is written. Set it to false to write the file
+# without touching the running kernel on a real host too.
+common_sysctl_set: true
 common_sysctl_settings:
   # Reverse path filtering and SYN flood protection
   net.ipv4.conf.all.rp_filter: 1
